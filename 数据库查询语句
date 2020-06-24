@@ -1,0 +1,150 @@
+CREATE TABLE `employees` (
+  `EmpId` int DEFAULT NULL,
+  `FullName` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `ManagerId` int NOT NULL,
+  `JoinDate` date DEFAULT NULL,
+  `City` varchar(20) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO `employees` VALUES (121, '约翰.斯诺', 321, '2014-01-01', '多伦多');
+INSERT INTO `employees` VALUES (321, '沃特.怀特', 986, '2015-01-30', '加利福尼亚州');
+INSERT INTO `employees` VALUES (421, '库尔迪普.拉娜', 876, '2016-11-27', '新德里');
+INSERT INTO `employees` VALUES (521, '查理', 121, '2020-06-06', '新西兰');
+INSERT INTO `employees` VALUES (621, 'What.Huante', 121, '2020-04-26', 'London');
+INSERT INTO `employees` VALUES (721, 'Halan.Tian', 521, '2020-06-06', 'Canada');
+
+
+
+CREATE TABLE `EmployeeSalary` (
+  `EmpId` int DEFAULT NULL,
+  `Project` varchar(6) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `Salary` int NOT NULL,
+  `Variable` int DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+INSERT INTO `EmployeeSalary` VALUES (121, 'P1', 8000, 500);
+INSERT INTO `EmployeeSalary` VALUES (321, 'P2', 10000, 1000);
+INSERT INTO `EmployeeSalary` VALUES (421, 'P1', 12000, 0);
+INSERT INTO `EmployeeSalary` VALUES (521, NULL, 6000, 0);
+
+--Q1:查询ManagerId为986下的所有雇员的EmpId和FullName
+select EmpId,FullName from employees where ManagerId = 986;
+--Q2:查询从EmployeeSalary表中获取可用的不同项目 关键字distinct获取不同的值
+select distinct(Project) from EmployeeSalary;
+--Q3: 获取在项目P1中工作的员工人数
+select count(*)from EmployeeSalary where Project = 'P1';
+--Q4:查询薪水的最多、最少和平均值
+select max(Salary),min(Salary),AVG(Salary) from EmployeeSalary;
+--Q5:查询薪水在9000-15000之间的员工Id及他们的薪水
+select EmpId,Salary from EmployeeSalary where Salary >= 9000 and Salary <= 15000;
+--Q6:查询获取住在多伦多并在ManagerId为321的经理下工作的那些雇员
+select * from employees where ManagerId = 321 and City = '多伦多';
+--Q7：查询住在加利福尼亚州或ManagerId为321的雇员信息
+select * from employees where City = '加利福尼亚州' or ManagerId = 321;
+--Q8: 查询获取在除P1之外所有Project上工作的员工信息
+select * from employees where EmpId not in (Select EmpId from EmployeeSalary where Project = 'P1');
+或者
+select * from employees where EmpId in (Select EmpId from EmployeeSalary where Project <> 'P1');
+--Q9: 查询获取每个雇员的总薪水加上可变薪水  Salary + Variable as totalSalary将计算之和--取别名为totalSalary
+select EmpId,Salary + Variable as totalSalary from EmployeeSalary;
+--Q10:查询名称以任何字符开头，后接“尔”并以任何字符序列结尾的员工信息
+--通配符_、%加like  _表示匹配任意一个字符，%匹配0或多个任意字符
+select * from employees where FullName like '_尔%';
+--Q11: 获取任何一个表employees和表EmploySalary中存在的所有EmpId
+--Union子句 该子句可以组合两个SQL查询的结果并返回唯一的一行
+select EmpId from employees union select EmpId from EmployeeSalary;
+--Q12:查询获取两张表之间公用的记录(查询语句错误)
+--intersect运算符用来获取两张表公用的记录 mysql没有此运算符
+--select * from employees INTERSECT SELECT * from EmployeeSalary;
+--子查询
+select* from EmployeeSalary where EmpId in (select EmpId from employees);
+--Q13：查询在一张表中存在但不在另一张表中存在的记录
+--SQL:select * from employees minus select * from EmployeeSalary;(minus不存在mysql中)
+--左连接（查询EmployeeSalary中不存在但在employees中存在的记录）
+select * from employees left join EmployeeSalary USING(EmpId)
+where EmployeeSalary.EmpId IS NULL;/*显示后面连接EmployeeSalary信息的记录*/
+select employees.* from employees left join EmployeeSalary USING(EmpId)
+where EmployeeSalary.EmpId IS NULL;/*只显示employees中字段信息的记录*/
+--Q14：查询两张表中都存在的EmpId
+select EmpId from employees where EmpId in (select EmpId from EmployeeSalary);
+--Q15:查询employees表中存在但EmployeeSalary表中不存在的EmpId
+select EmpId from employees where EmpId not in (select EmpId from EmployeeSalary);
+--Q16:查询获取员工FullName,并将.替换为“-”   REPLACE
+select replace(FullName,'.','-') from employees;
+--Q17:查询给定字符在字段中的位置  INSTR(str,substr)
+select instr(FullName,'尔') from employees;
+--Q18:查询并同时显示EmpId和ManagerId   CONCAT(str1,str2,...)
+select concat(EmpId,ManagerId) as newId from employees;
+--Q19：查询仅从employees表中的FullName列中提取名字（.号前的字段）
+/*
+SQL Server 使用substring提取字段，定位用charindex
+select substring(FullName,1,charindex('.',FullName)) from employees;
+*/
+--mysql中使用mid和locate
+SELECT mid(FullName,1,LOCATE('.',FullName)) from employees;
+--Q20:编写一个查询，以大写字母表示员工姓名，小写字母表示城市名。
+select UPPER(FullName), LOWER(City)from employees;
+--Q21:查找特定字符总数 - “FullName”字段中的'n'的个数
+select FullName,LENGTH(FullName) - length(REPLACE(FullName,'n','')) from employees;
+--Q22:删除前导空格和尾随空格来更新员工姓名  update和ltrim,rtrim一起使用
+update employees set FullName = ltrim(rtrim(FullName));
+--Q23:提取所有不在任何项目上工作的员工
+select EmpId from EmployeeSalary where Project is null;
+或者
+select employees.EmpId from employees left join EmployeeSalary using(EmpId) where EmployeeSalary.Project is null; 
+--Q24:查询薪水>= 5000且<= 10000的员工姓名
+--子查询
+select FullName from employees where EmpId in (select EmpId from EmployeeSalary where Salary between 5000 and 10000);
+--Q25:查询当前日期
+select now();
+--SQL select getdate();
+--Q26:查询从2020年加入的employees表中员工信息
+select * from employees where JoinDate between '2020-01-01' and '2020-12-31';
+--或者提取年份的部分
+select * from employees where YEAR(JoinDate) = '2020';
+--Q27：从employees表中获取在EmployeeSalary表中有薪水记录的所有员工信息 EXISTS'存在'
+select * from employees E where exists (select * from EmployeeSalary S where E.EmpId = S.EmpId);
+--Q28:按项目划分员工的人数，并按项目数量从大到小排序
+select Project,count(EmpId) EmpProjectCount from EmployeeSalary GROUP BY Project ORDER BY EmpProjectCount DESC;
+--Q29:获取员工姓名和工资记录。没有工资的也要显示该员工信息
+select E.FullName,S.Salary from employees E left join EmployeeSalary S on E.EmpId = S.EmpId;
+--Q30:写一个查询语句关联三个表
+select column1,column2 from tableA JOIN tableB on tableA.column3 = tableB.column3
+JOIN tableC on tableA.column4 = tableC.column4;
+--高级查询语句
+--Q31:查询employees表中既是雇员同时又是管理者的员工信息
+--自连接
+select distinct E.FullName from employees E INNER JOIN employees M on E.EmpId = M.ManagerId;
+--Q32:从employees表中获取重复的记录（保留主键-EmpId）
+/*给所有的字段上使用GROUP　BY,然后使用HAVING子句仅返回计数大于1的那些字段，即具有重复记录的行*/
+select FullName,ManagerId,JoinDate,City,count(*) from employees GROUP BY FullName,ManagerId,JoinDate,City HAVING count(*) > 1;
+--Q33:从表中删除重复项而无需使用临时表
+delete E1 from employees E1 INNER JOIN employees E2 where E1.EmpId > E2.EmpId and E1.FullName = E2.FullName and E1.ManagerId = E2.ManagerId and E1.JoinDate = E2.JoinDate and E1.City = E2.City;
+--Q34: 仅获取奇数行记录
+/*若有一个自增字段可以使用如下语句实现
+select * from employees where MOD (EmpId,2) <> 0;
+*/
+--没有自增字段 Row_number
+--SQL Server 
+select * from (select *,Row_Number() OVER(ORDER BY EmpId) as RowNumber from employees) E where E.RowNumber % 2 <> 0;
+select * from (select *,@rowNumber := @rowNumber+ 1 rn from employees JOIN(select @rowNumber:= 0)r) t where rn %2 = 1;
+--Q35:仅获取表中的偶数行记录
+select * from employees where MOD(EmpId,2) = 0;
+--SQL Server
+select * from (select *, Row_Number() OVER(GROUP BY EmpId) AS RowNumber from employees) E where E.RowNumber % 2 = 0;
+--mysql
+select * from (select *,@RowNumber := @RowNumber+ 1 rn from employees JOIN(select @RowNumber := 0) r)t where rn % 2 = 0;
+--Q36:创建一个新表，并使用从另一个表复制的数据和结构
+create table newTable select * from employees; 
+--Q37:创建一个与其他表具有相同结构的表
+create table newTable1 select * from employees where 1 = 0;
+--Q38：获取前3条记录
+select * from EmployeeSalary ORDER BY Salary DESC LIMIT 3;
+--或者
+select * from EmployeeSalary ORDER BY Salary DESC LIMIT 0,3;
+--SQL Server
+--select Top 3 * from EmployeeSalary ORDER BY Salary DESC;
+--Q39:查询表中第3高薪水的记录
+select * from EmployeeSalary ORDER BY Salary DESC LIMIT 2,1;
+--Q40:获取第三高薪水而不需要用TOP和LIMIT
+select * from EmployeeSalary Emp1 where 2 = (select count(DISTINCT (Emp2.Salary)) from EmployeeSalary Emp2 where Emp2.Salary > Emp1.Salary);
